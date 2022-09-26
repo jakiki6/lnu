@@ -54,7 +54,8 @@ function compile_lib() {
     tar vfx lib.tar --strip-components=1
 
     CFLAGS="-Os" ./configure --prefix=$(pwd)/../deps --with-sysroot=$(pwd)/../../root --host=$TARGET --enable-shared=no --enable-static=yes  --with-libgpg-error-prefix=$(pwd)/../deps
-    make -j4 install
+    make -j$(nproc)
+    make install
 
     cd ..
     rm -fr libs
@@ -78,7 +79,7 @@ if [ ! -d gpg ]; then
     wget "https://gnupg.org/ftp/gcrypt/gnupg/gnupg-2.3.7.tar.bz2" -O gpg.tar.bz2
     tar vfx gpg.tar.bz2 --strip-components=1
 
-    CFLAGS="-Os -fcommon" LDFLAGS="-static -s" ./configure --prefix=$(pwd)/../root --with-sysroot=$(pwd)/../root --host=$TARGET \
+    CFLAGS="-Os -fcommon" LDFLAGS="-static -s" ./configure --prefix=/ --with-sysroot=$(pwd)/../root --host=$TARGET \
         --with-npth-prefix=$(pwd)/deps \
         --with-libgpg-error-prefix=$(pwd)/deps \
         --with-libgcrypt-prefix=$(pwd)/deps \
@@ -99,16 +100,50 @@ if [ ! -d gpg ]; then
         --disable-scdaemon \
         --disable-sqlite \
         --disable-wks-tools \
-        --disable-zip
-    make -j4 install
+        --disable-zip \
+	--disable-gpgsm
+    make DESTDIR=$(pwd) -j$(nproc) install
+
+    cp bin/gpg ../root/bin
+
+    cd ..
+fi
+
+if [ ! -d kexec ]; then
+    echo "[*] building kexec-tools"
+
+    mkdir kexec
+    cd kexec
+
+    wget "https://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git/snapshot/kexec-tools-2.0.25.tar.gz" -O kexec.tar.gz
+    tar vfx kexec.tar.gz --strip-components=1
+
+    ./bootstrap
+    CFLAGS="-Os -fcommon" LDFLAGS="-static -s" ./configure --prefix=/ --with-sysroot=$(pwd)/../root --host=$TARGET
+    make DESTDIR=$(pwd)/../root -j$(nproc) install
 
     cd ..
 fi
 
 cp ../config/init root/
-cp ../config/keys.asc root/
+cp ../config/trustedkeys root/
+cp ../config/pubkeys root/
 
-echo "[*] packing initrd"
-cd root
-for i in $(find -type f); do ($TARGET-strip -s $i || true) 2> /dev/null; done
-find . 2> /dev/null | cpio -o -c -R root:root | xz -9 > ../initrd.img
+if [ ! -d linux ]; then
+    echo "[*] building kernel"
+
+    mkdir linux
+    cd linux
+
+    wget "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.19.11.tar.xz" -O linux.tar.xz
+    tar vfx linux.tar.xz --strip-components=1
+
+    cp ../../config/linux.$ARCH .config
+    make ARCH=$ARCH CROSS_COMPILE=$TARGET- -j$(nproc) hdimage
+    cd ..
+else
+    echo "[*] rebuilding kernel to include newest initrd"
+    cd linux
+    make ARCH=$ARCH CROSS_COMPILE=$TARGET- -j$(nproc) hdimage
+    cd ..
+fi

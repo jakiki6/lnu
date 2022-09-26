@@ -1,4 +1,71 @@
 #!/bin/sh
 
-echo "Hello world"
-exec sh
+mkdir /dev
+mkdir /proc
+mkdir /sys
+mkdir /tmp
+mkdir /run
+mkdir /mnt
+
+mount -t devtmpfs none /dev
+mount -t proc none /proc
+mount -t sysfs none /sys
+
+exec >/dev/tty0 2>&1 </dev/tty0
+export HOME=/tmp
+
+gpg --import /pubkeys
+gpg --import-ownertrust /trustedkeys
+
+ERROR() {
+    error "An error occured, dropping a shell"
+    exec sh -i
+}
+
+verify_file() {
+    gpg --trust-model direct --verify $1
+}
+
+kexec_boot() {
+    kexec -l /mnt/boot/kernel --initrd=/mnt/boot/initrd --append="$(cat /mnt/boot/append) root=UUID=$(blkid | grep /dev/$dev | cut -d" " -f2 | cut -d"\"" -f2)"
+    info "Loaded kernel, booting ..."
+    kexec -e
+    ERROR
+}
+
+info() {
+    echo -e "\e[32m[*] $@\e[0m"
+}
+
+warn() {
+    echo -e "\e[33m[!] $@\e[0m"
+}
+
+error() {
+    echo -e "\e[31m[!!!] $@ [!!!]\e[0m"
+}
+
+echo 1 > /proc/sys/kernel/printk
+clear
+
+for dev in $(cat /proc/partitions | cut -c 26- | tail -n +3); do
+    info "Trying device" $dev
+
+    if mount -o ro /dev/$dev /mnt; then
+        info "Mounted device"
+
+	if (verify_file /mnt/boot/kernel.sig && verify_file /mnt/boot/initrd.sig && verify_file /mnt/boot/append.sig); then
+            info "Found valid kernel"
+
+            kexec_boot
+	else
+            warn "Kernel wasn't found or isn't valid"
+	fi
+    else
+        warn "Couldn't mount device"
+    fi
+
+    umount /mnt 2> /dev/null
+done
+
+ERROR
