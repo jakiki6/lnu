@@ -135,7 +135,7 @@ if [ ! -d linux ]; then
     mkdir linux
     cd linux
 
-    wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.0.5.tar.xz" -O linux.tar.xz
+    wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.1.1.tar.xz" -O linux.tar.xz
     tar vfx linux.tar.xz --strip-components=1
 
     cp ../../config/linux.$ARCH .config
