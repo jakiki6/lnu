@@ -139,11 +139,11 @@ if [ ! -d linux ]; then
     tar vfx linux.tar.xz --strip-components=1
 
     cp ../../config/linux.$ARCH .config
-    make ARCH=$ARCH CROSS_COMPILE=$TARGET- -j$(nproc) hdimage
+    make ARCH=$ARCH CROSS_COMPILE=$TARGET- -j$(nproc) bzImage
     cd ..
 else
     echo "[*] rebuilding kernel to include newest initrd"
     cd linux
-    make ARCH=$ARCH CROSS_COMPILE=$TARGET- -j$(nproc) hdimage
+    make ARCH=$ARCH CROSS_COMPILE=$TARGET- -j$(nproc) bzImage
     cd ..
 fi
