@@ -147,3 +147,6 @@ else
     make ARCH=$ARCH CROSS_COMPILE=$TARGET- -j$(nproc) bzImage
     cd ..
 fi
+
+cd ..
+cp build/linux/arch/$ARCH/boot/bzImage .
