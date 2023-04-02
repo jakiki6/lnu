@@ -129,6 +129,9 @@ cp ../config/init root/
 cp ../config/trustedkeys root/
 cp ../config/pubkeys root/
 
+rm -fr root/lib
+rm -fr root/share
+
 if [ ! -d linux ]; then
     echo "[*] building kernel"
 

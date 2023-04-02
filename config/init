@@ -18,8 +18,8 @@ gpg --import /pubkeys
 gpg --import-ownertrust /trustedkeys
 
 ERROR() {
-    error "An error occured, dropping a shell"
-    exec sh -i
+    error "An error occured"
+    exec halt -f
 }
 
 verify_file() {
@@ -29,20 +29,20 @@ verify_file() {
 kexec_boot() {
     kexec -l /mnt/boot/kernel --initrd=/mnt/boot/initrd --append="$(cat /mnt/boot/append) root=UUID=$(blkid | grep /dev/$dev | cut -d" " -f2 | cut -d"\"" -f2)"
     info "Loaded kernel, booting ..."
-    kexec -e
+    kexec -l -e
     ERROR
 }
 
 info() {
-    echo -e "\e[32m[*] $@\e[0m"
+    echo -e "\x1b[32m[*] $@\x1b[0m"
 }
 
 warn() {
-    echo -e "\e[33m[!] $@\e[0m"
+    echo -e "\x1b[33m[!] $@\x1b[0m"
 }
 
 error() {
-    echo -e "\e[31m[!!!] $@ [!!!]\e[0m"
+    echo -e "\x1b[31m[!!!] $@ [!!!]\x1b[0m"
 }
 
 echo 1 > /proc/sys/kernel/printk
