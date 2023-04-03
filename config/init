@@ -18,8 +18,8 @@ gpg --import /pubkeys
 gpg --import-ownertrust /trustedkeys
 
 ERROR() {
-    error "An error occured"
-    exec halt -f
+    error "An error occured, dropping a shell"
+    exec sh
 }
 
 verify_file() {
