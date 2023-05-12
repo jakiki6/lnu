@@ -32,7 +32,7 @@ download npth.tar.bz2 "https://www.gnupg.org/ftp/gcrypt/npth/npth-1.6.tar.bz2"
 
 download kexec-tools.tar.gz "https://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git/snapshot/kexec-tools-2.0.25.tar.gz"
 
-download linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.2.12.tar.xz"
+download linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.3.2.tar.xz"
 
 if [ ! -d toolchain ]; then
     echo "[*] building toolchain"
