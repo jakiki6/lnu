@@ -14,16 +14,13 @@ mount -t sysfs none /sys
 exec >/dev/tty0 2>&1 </dev/tty0
 export HOME=/tmp
 
-gpg --import /pubkeys
-gpg --import-ownertrust /trustedkeys
-
 ERROR() {
     error "An error occured, dropping a shell"
     exec sh
 }
 
 verify_file() {
-    gpg --trust-model direct --verify $1
+    minisign -V -p /key.pub -m $1
 }
 
 kexec_boot() {
@@ -54,7 +51,7 @@ for dev in $(cat /proc/partitions | cut -c 26- | tail -n +3); do
     if mount -o ro /dev/$dev /mnt; then
         info "Mounted device"
 
-	if (verify_file /mnt/boot/kernel.sig && verify_file /mnt/boot/initrd.sig && verify_file /mnt/boot/append.sig); then
+	if (verify_file /mnt/boot/kernel.minisign && verify_file /mnt/boot/initrd.minisign && verify_file /mnt/boot/append.minisign); then
             info "Found valid kernel"
 
             kexec_boot

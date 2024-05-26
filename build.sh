@@ -23,16 +23,13 @@ if [ ! -d dist ]; then mkdir dist; fi
 
 download busybox.tar.bz2 "https://www.busybox.net/downloads/busybox-1.35.0.tar.bz2"
 
-download gnupg.tar.bz2 "https://gnupg.org/ftp/gcrypt/gnupg/gnupg-2.3.7.tar.bz2"
-download libgpg-error.tar.bz2 "https://www.gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.45.tar.bz2"
-download libgcrypt.tar.bz2 "https://www.gnupg.org/ftp/gcrypt/libgcrypt/libgcrypt-1.10.1.tar.bz2"
-download libksba.tar.bz2 "https://www.gnupg.org/ftp/gcrypt/libksba/libksba-1.6.1.tar.bz2"
-download libassuan.tar.bz2 "https://www.gnupg.org/ftp/gcrypt/libassuan/libassuan-2.5.5.tar.bz2"
-download npth.tar.bz2 "https://www.gnupg.org/ftp/gcrypt/npth/npth-1.6.tar.bz2"
+download libsodium.tar.gz "https://github.com/jedisct1/libsodium/releases/download/1.0.20-RELEASE/libsodium-1.0.20.tar.gz"
+
+download minisign.tar.gz "https://github.com/jedisct1/minisign/releases/download/0.11/minisign-0.11.tar.gz"
 
 download kexec-tools.tar.gz "https://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git/snapshot/kexec-tools-2.0.25.tar.gz"
 
-download linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.3.2.tar.xz"
+download linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.9.2.tar.xz"
 
 if [ ! -d toolchain ]; then
     echo "[*] building toolchain"
@@ -66,63 +63,25 @@ if [ ! -d busybox ]; then
     cd ..
 fi
 
-function compile_lib() {
-    mkdir libs
-    cd libs
+if [ ! -d minisign ]; then
+    echo "[*] building minisign"
 
-    tar vfx ../../dist/$1 --strip-components=1
+    mkdir minisign
+    cd minisign
 
-    CFLAGS="-Os" ./configure --prefix=$(pwd)/../deps --with-sysroot=$(pwd)/../../root --host=$TARGET --enable-shared=no --enable-static=yes  --with-libgpg-error-prefix=$(pwd)/../deps
+    mkdir libsodium
+    cd libsodium
+
+    tar vfx ../../dist/libsodium.tar.gz --strip-components=1
+    CFLAGS="-Os -fcommon" LDFLAGS="-static -s" ./configure --prefix=/ --with-sysroot=$(pwd)/../../root --host=$TARGET
     make -j$(nproc)
-    make install
 
     cd ..
-    rm -fr libs
-}
 
-if [ ! -d gpg ]; then
-    echo "[*] building gpg"
-
-    mkdir gpg
-    cd gpg
-
-    mkdir deps
-    compile_lib libgpg-error.tar.bz2
-    compile_lib libgcrypt.tar.bz2
-    compile_lib libksba.tar.bz2
-    compile_lib libassuan.tar.bz2
-    compile_lib npth.tar.bz2
-
-    mkdir libs
-
-    tar vfx ../dist/gnupg.tar.bz2 --strip-components=1
-
-    CFLAGS="-Os -fcommon" LDFLAGS="-static -s" ./configure --prefix=/ --with-sysroot=$(pwd)/../root --host=$TARGET \
-        --with-npth-prefix=$(pwd)/deps \
-        --with-libgpg-error-prefix=$(pwd)/deps \
-        --with-libgcrypt-prefix=$(pwd)/deps \
-        --with-libassuan-prefix=$(pwd)/deps \
-        --with-ksba-prefix=$(pwd)/deps \
-	--disable-sqlite \
-	--disable-card-support \
-	--disable-ccid-driver \
-        --disable-dirmngr \
-        --disable-doc \
-        --disable-gnutls \
-	--disable-ldap \
-        --disable-libdns \
-        --disable-nls \
-        --disable-ntbtls \
-        --disable-photo-viewers \
-        --disable-regex \
-        --disable-scdaemon \
-        --disable-sqlite \
-        --disable-wks-tools \
-        --disable-zip \
-	--disable-gpgsm
-    make DESTDIR=$(pwd) -j$(nproc) install
-
-    cp bin/gpg ../root/bin
+    cd src
+    gcc -o minisign -Os -DVERIFY_ONLY -static *.c ../libsodium/src/libsodium/.libs/libsodium.a
+    strip minisign
+    cp minisign ../root/bin
 
     cd ..
 fi
@@ -143,8 +102,7 @@ if [ ! -d kexec ]; then
 fi
 
 cp ../config/init root/
-cp ../config/trustedkeys root/
-cp ../config/pubkeys root/
+cp ../config/key.pub root/
 
 rm -fr root/lib
 rm -fr root/share
