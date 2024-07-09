@@ -21,15 +21,15 @@ cd build
 
 if [ ! -d dist ]; then mkdir dist; fi
 
-download busybox.tar.bz2 "https://www.busybox.net/downloads/busybox-1.35.0.tar.bz2"
+download busybox.tar.bz2 "https://www.busybox.net/downloads/busybox-1.36.1.tar.bz2"
 
 download libsodium.tar.gz "https://github.com/jedisct1/libsodium/releases/download/1.0.20-RELEASE/libsodium-1.0.20.tar.gz"
 
 download minisign.tar.gz "https://github.com/jedisct1/minisign/releases/download/0.11/minisign-0.11.tar.gz"
 
-download kexec-tools.tar.gz "https://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git/snapshot/kexec-tools-2.0.25.tar.gz"
+download kexec-tools.tar.gz "https://git.kernel.org/pub/scm/utils/kernel/kexec/kexec-tools.git/snapshot/kexec-tools-2.0.28.tar.gz"
 
-download linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.9.2.tar.xz"
+download linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.9.8.tar.xz"
 
 if [ ! -d toolchain ]; then
     echo "[*] building toolchain"
